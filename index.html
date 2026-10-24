@@ -29,10 +29,11 @@
             <h1 id="page-title">Make a message<br /><span>out of the stars.</span></h1>
             <p class="intro-copy">Compose a binary grid, one cell at a time. Give your idea a shape, then send it out into the universe.</p>
           </div>
-          <div class="intro-note" aria-label="About the editor">
-            <span class="note-index">01 — 03</span>
-            <span class="note-line"></span>
-            <p>Choose a prime pair.<br />Fill the grid. Share your signal.</p>
+          <div class="example-picker">
+            <label for="example-select">Load an example</label>
+            <select id="example-select" aria-label="Load a grid example">
+              <option value="">Choose an example…</option>
+            </select>
           </div>
         </section>
 
@@ -54,6 +55,7 @@
               <span class="zoom-label" id="zoom-label">100%</span>
               <button class="icon-button" id="zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button>
               <button class="icon-button" id="zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+              <button class="icon-button fullscreen-button" id="fullscreen-button" type="button" aria-label="Enter full screen" title="Enter full screen">⛶</button>
               <span class="toolbar-divider"></span>
               <button class="button button-fit" id="fit-width-button" type="button">Fit width</button>
               <button class="button button-fit" id="fit-height-button" type="button">Fit height</button>
@@ -62,7 +64,7 @@
           </div>
 
           <div class="canvas-wrap" id="canvas-wrap">
-            <canvas id="grid-canvas" tabindex="0" role="application" aria-label="Binary grid editor. Click or drag to paint. Use arrow keys to move and Space to toggle the focused cell."></canvas>
+            <canvas id="grid-canvas" tabindex="0" role="application" aria-label="Binary grid editor. Click or drag to paint. Use arrow keys to move and Space to toggle the focused cell. Hold Shift with arrow keys to select multiple cells."></canvas>
 
           </div>
 
@@ -74,7 +76,7 @@
         </section>
 
         <section class="below-grid" aria-label="Project information">
-          <p><span class="info-symbol">i</span> Click or drag to paint <span class="hint-separator">·</span> Scroll to zoom <span class="hint-separator">·</span> Use arrow keys to move and Space to toggle.</p>
+          <p><span class="info-symbol">i</span> Click or drag to paint <span class="hint-separator">·</span> Ctrl + / Ctrl Shift + to zoom <span class="hint-separator">·</span> Shift + arrows to select cells <span class="hint-separator">·</span> Space to toggle.</p>
           <a href="https://github.com/Mapaor/arecibo-grid" target="_blank" rel="noopener noreferrer">View on GitHub <span aria-hidden="true">↗</span></a>
         </section>
       </main>

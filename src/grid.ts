@@ -29,14 +29,9 @@ export function isAllowedPair(width: number, height: number): boolean {
   const widthIndex = PRIME_INDEX.get(width);
   const heightIndex = PRIME_INDEX.get(height);
   if (widthIndex === undefined || heightIndex === undefined) return false;
-  return Math.abs(widthIndex - heightIndex) - 1 < 5;
+  return Math.abs(widthIndex - heightIndex) - 1 < 25;
 }
 
-export function nearestLowerPrimeNeighbor(prime: number): number {
-  const index = PRIME_INDEX.get(prime);
-  if (index === undefined) return PRIMES[0];
-  return PRIMES[index > 0 ? index - 1 : index + 1];
-}
 
 export function createGrid(width: number, height: number): Grid {
   return { width, height, cells: new Uint8Array(width * height) };
@@ -64,7 +59,7 @@ export function parseGridText(text: string): Grid {
     throw new Error(`Width and height must be prime numbers from 2 to ${MAX_PRIME}.`);
   }
   if (!isAllowedPair(width, height)) {
-    throw new Error('Choose dimensions with fewer than five prime numbers between them.');
+    throw new Error('Choose dimensions with fewer than 25 prime numbers between them.');
   }
 
   const dataStart = newline + (text[newline] === '\r' ? 2 : 1);

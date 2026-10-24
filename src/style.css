@@ -41,10 +41,10 @@ main { padding: 55px 0 32px; }
 h1 { margin: 0; color: #263137; font-family: 'Space Grotesk', sans-serif; font-size: clamp(35px, 4vw, 51px); line-height: 1.06; letter-spacing: -2.8px; font-weight: 500; }
 h1 span { color: #858d88; }
 .intro-copy { max-width: 410px; margin: 15px 0 0; color: #747d79; font-size: 13px; line-height: 1.7; }
-.intro-note { display: flex; flex-direction: column; align-items: flex-start; min-width: 205px; padding-bottom: 4px; }
-.note-index { color: #929994; font-size: 9px; }
-.note-line { width: 33px; height: 1px; margin: 14px 0 11px; background: var(--orange); }
-.intro-note p { margin: 0; color: #737b77; font-size: 11px; line-height: 1.75; }
+.example-picker { display: flex; flex-direction: column; gap: 7px; min-width: 205px; padding-bottom: 4px; }
+.example-picker label { color: #737b77; font-size: 10px; }
+.example-picker select { width: 100%; height: 36px; padding: 0 30px 0 10px; border: 1px solid #deded8; border-radius: 4px; background-color: var(--paper); color: var(--ink); font: 11px 'DM Sans', sans-serif; }
+.example-picker select:focus-visible { outline: 2px solid #c87548; outline-offset: 2px; }
 .editor { max-width: 990px; margin: 0 auto; overflow: hidden; border: 1px solid #deded8; border-radius: 7px; background: var(--paper); box-shadow: 0 12px 36px #28332a0a; }
 .editor-toolbar { min-height: 65px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 0 19px; border-bottom: 1px solid #e5e4df; }
 .dimensions, .view-controls { display: flex; align-items: center; }
@@ -67,6 +67,9 @@ h1 span { color: #858d88; }
 .button-clear.is-armed { border-color: #c87548; background: #faeee8; color: #9e452e; }
 .dimension-field option.outside-range { color: #a6aba7; }
 .canvas-wrap { position: relative; height: clamp(350px, 47vw, 580px); overflow: hidden; background: #eeede8; }
+.canvas-wrap:fullscreen { width: 100vw; height: 100vh; border: 0; background: #eeede8; }
+.canvas-wrap:fullscreen #grid-canvas { width: 100%; height: 100%; }
+.fullscreen-button { font-size: 16px; }
 #grid-canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; outline: none; }
 #grid-canvas.is-panning { cursor: grabbing; }
 .canvas-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #dcdad4; border-radius: 20px; background: #faf9f6eF; color: #747b77; font-size: 10px; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 8px #1821210a; }
@@ -98,7 +101,7 @@ h1 span { color: #858d88; }
   .topbar-actions .button-icon { font-size: 15px; }
   main { padding-top: 37px; padding-bottom: 28px; }
   .intro { margin-bottom: 27px; }
-  .intro-note { display: none; }
+  .example-picker { min-width: 145px; }
   h1 { font-size: clamp(37px, 10vw, 48px); }
   .intro-copy { max-width: 340px; font-size: 12px; }
   .editor-toolbar { min-height: 95px; align-items: flex-start; flex-direction: column; justify-content: center; gap: 11px; padding: 12px 13px; }

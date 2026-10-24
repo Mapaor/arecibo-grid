@@ -5,7 +5,7 @@ A minimal website to design custom binary messages, inspired by the [Arecibo mes
 ## Grid rules
 
 - Width and height are primes between 2 and 2027.
-- To keep the grid kinda "square-ish" only primer numbers close (less than 5 primes apart) to each other are allowed. 
+- To keep the grid kinda "square-ish", only prime numbers with fewer than 25 primes between them are allowed. 
 
   *Note: You can fork this repo and remove this limitation if you want.*
 

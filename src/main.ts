@@ -1,4 +1,5 @@
-import { createGrid, isAllowedPair, MAX_PRIME, nearestLowerPrimeNeighbor, parseGridText, PRIMES, serializeGrid, type Grid } from './grid';
+import { createGrid, isAllowedPair, MAX_PRIME, parseGridText, PRIMES, serializeGrid, type Grid } from './grid';
+import { GRID_EXAMPLES } from './examples';
 import './style.css';
 
 const byId = <T extends HTMLElement>(id: string): T => {
@@ -17,6 +18,7 @@ const status = byId('grid-status');
 const activeCount = byId('active-count');
 const message = byId('message');
 const fileInput = byId<HTMLInputElement>('file-input');
+const exampleSelect = byId<HTMLSelectElement>('example-select');
 const context = canvas.getContext('2d');
 if (!context) throw new Error('Canvas 2D is not available in this browser.');
 
@@ -33,6 +35,8 @@ let panPointer: number | null = null;
 let panStart = { x: 0, y: 0, offsetX: 0, offsetY: 0 };
 let spaceDown = false;
 let activeCell = { x: 0, y: 0 };
+let selectionAnchor: { x: number; y: number } | null = null;
+let selectionHead: { x: number; y: number } | null = null;
 let activeCells = 0;
 let renderedFrame = 0;
 let clearConfirmationTimer = 0;
@@ -62,6 +66,30 @@ function populateSelects(): void {
   updateDimensionOptions();
 }
 
+function loadExample(exampleId: string): void {
+  const example = GRID_EXAMPLES.find(({ id }) => id === exampleId);
+  if (!example) return;
+  if (hasActiveCells() && !window.confirm('Loading this example will replace your current design. Continue?')) {
+    exampleSelect.value = '';
+    return;
+  }
+
+  grid = { ...example.grid, cells: example.grid.cells.slice() };
+  activeCells = grid.cells.reduce((total, cell) => total + cell, 0);
+  activeCell = { x: 0, y: 0 };
+  selectionAnchor = null;
+  selectionHead = null;
+  widthSelect.value = String(grid.width);
+  heightSelect.value = String(grid.height);
+  updateDimensionOptions();
+  updateSummary();
+  createRaster();
+  updateStatus();
+  fitToWidth();
+  showMessage(`${example.name} loaded.`, 'success');
+  exampleSelect.value = '';
+}
+
 function updateDimensionOptions(): void {
   const width = Number(widthSelect.value);
   const height = Number(heightSelect.value);
@@ -83,10 +111,10 @@ function handleDimensionChange(changed: 'width' | 'height'): void {
   let height = Number(heightSelect.value);
   if (!isAllowedPair(width, height)) {
     if (changed === 'width') {
-      height = nearestLowerPrimeNeighbor(width);
+      height = width;
       heightSelect.value = String(height);
     } else {
-      width = nearestLowerPrimeNeighbor(height);
+      width = height;
       widthSelect.value = String(width);
     }
   }
@@ -165,6 +193,17 @@ function render(): void {
   context!.drawImage(raster, offsetX, offsetY, grid.width * scale, grid.height * scale);
 
   if (scale >= 7) drawGridLines();
+  if (selectionAnchor && selectionHead) {
+    const left = Math.min(selectionAnchor.x, selectionHead.x);
+    const top = Math.min(selectionAnchor.y, selectionHead.y);
+    const right = Math.max(selectionAnchor.x, selectionHead.x);
+    const bottom = Math.max(selectionAnchor.y, selectionHead.y);
+    context!.fillStyle = 'rgba(200, 117, 72, 0.18)';
+    context!.fillRect(offsetX + left * scale, offsetY + top * scale, (right - left + 1) * scale, (bottom - top + 1) * scale);
+    context!.strokeStyle = '#c87548';
+    context!.lineWidth = 2;
+    context!.strokeRect(offsetX + left * scale + 1, offsetY + top * scale + 1, Math.max(0, (right - left + 1) * scale - 2), Math.max(0, (bottom - top + 1) * scale - 2));
+  }
   if (activeCell.x >= 0 && activeCell.x < grid.width && activeCell.y >= 0 && activeCell.y < grid.height) {
     context!.strokeStyle = '#d1814b';
     context!.lineWidth = Math.max(1, 1.5 / dpr);
@@ -223,6 +262,17 @@ function cellAt(clientX: number, clientY: number): { x: number; y: number } | nu
   return { x, y };
 }
 
+function ensureActiveCellVisible(): void {
+  const cellLeft = offsetX + activeCell.x * scale;
+  const cellTop = offsetY + activeCell.y * scale;
+  const cellRight = cellLeft + scale;
+  const cellBottom = cellTop + scale;
+  if (cellLeft < 0) offsetX -= cellLeft;
+  else if (cellRight > viewportWidth) offsetX -= cellRight - viewportWidth;
+  if (cellTop < 0) offsetY -= cellTop;
+  else if (cellBottom > viewportHeight) offsetY -= cellBottom - viewportHeight;
+}
+
 function zoomAt(clientX: number, clientY: number, factor: number): void {
   const bounds = canvas.getBoundingClientRect();
   const pointerX = clientX - bounds.left;
@@ -263,6 +313,8 @@ function clearGrid(): void {
   clearButton.setAttribute('aria-label', 'Clear grid');
   clearButton.classList.remove('is-armed');
   grid.cells.fill(0);
+  selectionAnchor = null;
+  selectionHead = null;
   activeCells = 0;
   const rasterContext = raster.getContext('2d');
   if (rasterContext) {
@@ -285,6 +337,8 @@ function applyDimensions(width: number, height: number): void {
   }
 
   grid = createGrid(width, height);
+  selectionAnchor = null;
+  selectionHead = null;
   activeCells = 0;
   activeCell = { x: 0, y: 0 };
   createRaster();
@@ -338,6 +392,8 @@ function importTextFile(file: File): void {
       const imported = parseGridText(String(reader.result ?? ''));
       if (hasActiveCells() && !window.confirm('Importing this file will replace your current design. Continue?')) return;
       grid = imported;
+      selectionAnchor = null;
+      selectionHead = null;
       activeCells = grid.cells.reduce((total, cell) => total + cell, 0);
       widthSelect.value = String(grid.width);
       heightSelect.value = String(grid.height);
@@ -357,6 +413,13 @@ function importTextFile(file: File): void {
 }
 
 populateSelects();
+for (const example of GRID_EXAMPLES) {
+  const option = document.createElement('option');
+  option.value = example.id;
+  option.textContent = example.name;
+  exampleSelect.append(option);
+}
+exampleSelect.addEventListener('change', () => loadExample(exampleSelect.value));
 widthSelect.value = '23';
 heightSelect.value = '23';
 updateDimensionOptions();
@@ -367,8 +430,34 @@ updateStatus();
 widthSelect.addEventListener('change', () => handleDimensionChange('width'));
 heightSelect.addEventListener('change', () => handleDimensionChange('height'));
 
-byId('zoom-in').addEventListener('click', () => zoomAt(viewportWidth / 2 + canvas.getBoundingClientRect().left, viewportHeight / 2 + canvas.getBoundingClientRect().top, 1.25));
-byId('zoom-out').addEventListener('click', () => zoomAt(viewportWidth / 2 + canvas.getBoundingClientRect().left, viewportHeight / 2 + canvas.getBoundingClientRect().top, 0.8));
+function zoomAtCenter(factor: number): void {
+  const bounds = canvas.getBoundingClientRect();
+  zoomAt(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2, factor);
+}
+
+byId('zoom-in').addEventListener('click', () => zoomAtCenter(1.25));
+byId('zoom-out').addEventListener('click', () => zoomAtCenter(0.8));
+const fullscreenButton = byId<HTMLButtonElement>('fullscreen-button');
+fullscreenButton.addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement === canvasWrap) await document.exitFullscreen();
+    else await canvasWrap.requestFullscreen();
+  } catch {
+    showMessage('Full screen is not available in this browser.', 'error');
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  const isFullscreen = document.fullscreenElement === canvasWrap;
+  fullscreenButton.textContent = isFullscreen ? '×' : '⛶';
+  fullscreenButton.setAttribute('aria-label', isFullscreen ? 'Exit full screen' : 'Enter full screen');
+  fullscreenButton.title = isFullscreen ? 'Exit full screen' : 'Enter full screen';
+  requestAnimationFrame(() => {
+    const bounds = canvasWrap.getBoundingClientRect();
+    viewportWidth = bounds.width;
+    viewportHeight = bounds.height;
+    fitToWidth();
+  });
+});
 byId('fit-width-button').addEventListener('click', fitToWidth);
 byId('fit-height-button').addEventListener('click', fitToHeight);
 byId('clear-grid-button').addEventListener('click', clearGrid);
@@ -382,6 +471,7 @@ fileInput.addEventListener('change', () => {
 });
 
 canvas.addEventListener('pointerdown', (event) => {
+  canvas.focus({ preventScroll: true });
   if (event.button === 1 || spaceDown) {
     panPointer = event.pointerId;
     panStart = { x: event.clientX, y: event.clientY, offsetX, offsetY };
@@ -435,15 +525,38 @@ canvas.addEventListener('keydown', (event) => {
   const moves: Record<string, [number, number]> = {
     ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
   };
-  if (event.key in moves) {
+  if (event.ctrlKey && (event.key === '+' || event.key === '=')) {
+    event.preventDefault();
+    zoomAtCenter(1.25);
+  } else if (event.ctrlKey && event.key === '-') {
+    event.preventDefault();
+    zoomAtCenter(0.8);
+  } else if (event.key in moves) {
     event.preventDefault();
     const [dx, dy] = moves[event.key];
-    activeCell.x = Math.max(0, Math.min(grid.width - 1, activeCell.x + dx));
-    activeCell.y = Math.max(0, Math.min(grid.height - 1, activeCell.y + dy));
+    if (event.shiftKey) {
+      if (!selectionAnchor) selectionAnchor = { ...activeCell };
+      activeCell.x = Math.max(0, Math.min(grid.width - 1, activeCell.x + dx));
+      activeCell.y = Math.max(0, Math.min(grid.height - 1, activeCell.y + dy));
+      selectionHead = { ...activeCell };
+    } else {
+      selectionAnchor = null;
+      selectionHead = null;
+      activeCell.x = Math.max(0, Math.min(grid.width - 1, activeCell.x + dx));
+      activeCell.y = Math.max(0, Math.min(grid.height - 1, activeCell.y + dy));
+    }
+    ensureActiveCellVisible();
     scheduleRender();
   } else if (event.code === 'Space') {
     event.preventDefault();
-    updateCell(activeCell.x, activeCell.y, grid.cells[activeCell.y * grid.width + activeCell.x] ? 0 : 1);
+    const left = selectionAnchor && selectionHead ? Math.min(selectionAnchor.x, selectionHead.x) : activeCell.x;
+    const right = selectionAnchor && selectionHead ? Math.max(selectionAnchor.x, selectionHead.x) : activeCell.x;
+    const top = selectionAnchor && selectionHead ? Math.min(selectionAnchor.y, selectionHead.y) : activeCell.y;
+    const bottom = selectionAnchor && selectionHead ? Math.max(selectionAnchor.y, selectionHead.y) : activeCell.y;
+    const targetValue = grid.cells[top * grid.width + left] ? 0 : 1;
+    for (let y = top; y <= bottom; y += 1) {
+      for (let x = left; x <= right; x += 1) updateCell(x, y, targetValue);
+    }
   }
 });
 
