@@ -1,5 +1,6 @@
 import { createGrid, isAllowedPair, MAX_PRIME, parseGridText, PRIMES, serializeGrid, type Grid } from './grid';
 import { GRID_EXAMPLES } from './examples';
+import { lucideIcon } from './icons';
 import './style.css';
 
 const byId = <T extends HTMLElement>(id: string): T => {
@@ -58,6 +59,15 @@ let clearConfirmationTimer = 0;
 let clearArmed = false;
 let pendingDimensions: { width: number; height: number } | null = null;
 const clearButton = byId<HTMLButtonElement>('clear-grid-button');
+
+function populateIcons(): void {
+  for (const slot of Array.from(document.querySelectorAll<HTMLElement>('[data-icon]'))) {
+    const name = slot.dataset.icon;
+    if (name) slot.replaceChildren(lucideIcon(name, slot.classList.contains('button-icon') ? 15 : 16));
+  }
+}
+
+populateIcons();
 
 function snapshotGrid(): GridSnapshot {
   return { width: grid.width, height: grid.height, cells: grid.cells.slice() };
@@ -640,7 +650,7 @@ fullscreenButton.addEventListener('click', async () => {
 });
 document.addEventListener('fullscreenchange', () => {
   const isFullscreen = document.fullscreenElement === canvasWrap;
-  fullscreenButton.textContent = isFullscreen ? '×' : '⛶';
+  fullscreenButton.replaceChildren(lucideIcon(isFullscreen ? 'minimize-2' : 'maximize-2', 16));
   fullscreenButton.setAttribute('aria-label', isFullscreen ? 'Exit full screen' : 'Enter full screen');
   fullscreenButton.title = isFullscreen ? 'Exit full screen' : 'Enter full screen';
   requestAnimationFrame(() => {

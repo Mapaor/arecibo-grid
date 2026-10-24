@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f5f4f0" />
     <meta name="description" content="Design and export custom binary message grids." />
-    <title>Arecibo Grid — Message designer</title>
+    <title>Arecibo Grid</title>
   </head>
   <body>
     <div id="app">
@@ -16,9 +16,9 @@
         </a>
         <div class="topbar-actions">
 
-          <button class="button button-quiet" id="import-button" type="button"><span class="button-icon" aria-hidden="true">↥</span> Import text</button>
-          <button class="button button-quiet" id="export-text-button" type="button"><span class="button-icon" aria-hidden="true">↧</span> Export text</button>
-          <button class="button button-primary" id="export-image-button" type="button"><span class="button-icon" aria-hidden="true">▧</span> Export image</button>
+          <button class="button button-quiet" id="import-button" type="button"><span class="button-icon" data-icon="upload"></span> Import text</button>
+          <button class="button button-quiet" id="export-text-button" type="button"><span class="button-icon" data-icon="download"></span> Export text</button>
+          <button class="button button-primary" id="export-image-button" type="button"><span class="button-icon" data-icon="image"></span> Export image</button>
           <input id="file-input" type="file" accept=".txt,.grid,text/plain" hidden />
         </div>
       </header>
@@ -50,7 +50,7 @@
                 <label class="visually-hidden" for="height-select">Height</label>
                 <select id="height-select" aria-label="Grid height" title="Dimmed primes remain selectable; out-of-range choices adjust the other dimension."></select>
               </div>
-              <button class="button button-fit swap-dimensions-button" id="swap-dimensions-button" type="button" title="Transpose the grid and swap its dimensions" aria-label="Swap dimensions">Swap</button>
+              <button class="button button-fit swap-dimensions-button" id="swap-dimensions-button" type="button" title="Transpose the grid and swap its dimensions" aria-label="Swap dimensions"><span class="button-icon" data-icon="arrow-left-right"></span></button>
 
               <div class="interpretation-field">
                 <select id="interpretation-select" aria-label="Interpretation">
@@ -61,15 +61,15 @@
                 </select>
               </div>
               <div class="history-controls" aria-label="Edit history">
-                <button class="icon-button history-button" id="undo-button" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled>↶</button>
-                <button class="icon-button history-button" id="redo-button" type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled>↷</button>
+                <button class="icon-button history-button" id="undo-button" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled><span data-icon="undo"></span></button>
+                <button class="icon-button history-button" id="redo-button" type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled><span data-icon="redo"></span></button>
               </div>
             </div>
             <div class="view-controls" aria-label="Canvas view controls">
               <span class="zoom-label" id="zoom-label">100%</span>
-              <button class="icon-button" id="zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button>
-              <button class="icon-button" id="zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button>
-              <button class="icon-button fullscreen-button" id="fullscreen-button" type="button" aria-label="Enter full screen" title="Enter full screen">⛶</button>
+              <button class="icon-button zoom-button" id="zoom-out" type="button" aria-label="Zoom out" title="Zoom out"><span data-icon="minus"></span></button>
+              <button class="icon-button zoom-button" id="zoom-in" type="button" aria-label="Zoom in" title="Zoom in"><span data-icon="plus"></span></button>
+              <button class="icon-button fullscreen-button" id="fullscreen-button" type="button" aria-label="Enter full screen" title="Enter full screen"><span data-icon="maximize-2"></span></button>
               <span class="toolbar-divider"></span>
               <button class="button button-fit" id="fit-width-button" type="button">Fit width</button>
               <button class="button button-fit" id="fit-height-button" type="button">Fit height</button>
@@ -90,11 +90,11 @@
         </section>
 
         <section class="below-grid" aria-label="Project information">
-          <p><span class="info-symbol">i</span> Click or drag to paint <span class="hint-separator">·</span> Ctrl + / Ctrl Shift + to zoom <span class="hint-separator">·</span> Shift + arrows to select cells <span class="hint-separator">·</span> Space to toggle.</p>
-          <a href="https://github.com/Mapaor/arecibo-grid" target="_blank" rel="noopener noreferrer">View on GitHub <span aria-hidden="true">↗</span></a>
+          <p><span class="info-symbol" data-icon="info"></span> Click or drag to paint <span class="hint-separator">·</span> Ctrl + / Ctrl Shift + to zoom <span class="hint-separator">·</span> Shift + arrows to select cells <span class="hint-separator">·</span> Space to toggle.</p>
+          <a href="https://github.com/Mapaor/arecibo-grid" target="_blank" rel="noopener noreferrer">View on GitHub <span data-icon="external-link"></span></a>
         </section>
         <dialog id="dimension-confirm-dialog" class="confirm-dialog" aria-labelledby="dimension-confirm-title" aria-describedby="dimension-confirm-description">
-          <div class="dialog-mark" aria-hidden="true">!</div>
+          <div class="dialog-mark" data-icon="triangle-alert"></div>
           <h2 id="dimension-confirm-title">Start a new grid?</h2>
           <p id="dimension-confirm-description">Changing the dimensions will clear the current design. This cannot be undone.</p>
           <div class="dialog-actions">
