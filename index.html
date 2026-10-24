@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f4f0" />
+    <meta name="description" content="Design and export custom binary message grids." />
+    <title>Arecibo Grid — Message designer</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Arecibo Grid home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span>arecibo<span class="brand-light">grid</span></span>
+        </a>
+        <div class="topbar-actions">
+          <button class="button button-quiet" id="import-button" type="button"><span class="button-icon" aria-hidden="true">↥</span> Import text</button>
+          <button class="button button-quiet" id="export-text-button" type="button"><span class="button-icon" aria-hidden="true">↧</span> Export text</button>
+          <button class="button button-primary" id="export-image-button" type="button"><span class="button-icon" aria-hidden="true">▧</span> Export image</button>
+          <input id="file-input" type="file" accept=".txt,.grid,text/plain" hidden />
+        </div>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow"><span class="eyebrow-dot"></span> A tiny signal, made by you</p>
+            <h1 id="page-title">Make a message<br /><span>out of the stars.</span></h1>
+            <p class="intro-copy">Compose a binary grid, one cell at a time. Give your idea a shape, then send it out into the universe.</p>
+          </div>
+          <div class="intro-note" aria-label="About the editor">
+            <span class="note-index">01 — 03</span>
+            <span class="note-line"></span>
+            <p>Choose a prime pair.<br />Fill the grid. Share your signal.</p>
+          </div>
+        </section>
+
+        <section class="editor" aria-label="Binary message editor">
+          <div class="editor-toolbar">
+            <div class="dimensions">
+              <div class="dimension-field">
+                <label for="width-select">Width</label>
+                <select id="width-select" aria-label="Grid width" title="Dimmed primes remain selectable; out-of-range choices adjust the other dimension."></select>
+              </div>
+              <span class="dimension-times" aria-hidden="true">×</span>
+              <div class="dimension-field">
+                <label for="height-select">Height</label>
+                <select id="height-select" aria-label="Grid height" title="Dimmed primes remain selectable; out-of-range choices adjust the other dimension."></select>
+              </div>
+              <span class="dimension-summary" id="dimension-summary"></span>
+            </div>
+            <div class="view-controls" aria-label="Canvas view controls">
+              <span class="zoom-label" id="zoom-label">100%</span>
+              <button class="icon-button" id="zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button>
+              <button class="icon-button" id="zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+              <span class="toolbar-divider"></span>
+              <button class="button button-fit" id="fit-width-button" type="button">Fit width</button>
+              <button class="button button-fit" id="fit-height-button" type="button">Fit height</button>
+              <button class="button button-fit button-clear" id="clear-grid-button" type="button">Clear grid</button>
+            </div>
+          </div>
+
+          <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="grid-canvas" tabindex="0" role="application" aria-label="Binary grid editor. Click or drag to paint. Use arrow keys to move and Space to toggle the focused cell."></canvas>
+
+          </div>
+
+          <div class="editor-footer">
+            <div class="grid-status"><span class="status-indicator"></span><span id="grid-status">Ready to create</span></div>
+            <div class="cell-count"><span id="active-count">0</span> <span class="muted">active cells</span></div>
+          </div>
+          <p class="message" id="message" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="below-grid" aria-label="Project information">
+          <p><span class="info-symbol">i</span> Click or drag to paint <span class="hint-separator">·</span> Scroll to zoom <span class="hint-separator">·</span> Use arrow keys to move and Space to toggle.</p>
+          <a href="https://github.com/Mapaor/arecibo-grid" target="_blank" rel="noopener noreferrer">View on GitHub <span aria-hidden="true">↗</span></a>
+        </section>
+      </main>
+
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
