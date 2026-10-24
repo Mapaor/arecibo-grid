@@ -1,5 +1,5 @@
 import { createGrid, isAllowedPair, MAX_PRIME, parseGridText, PRIMES, serializeGrid, type Grid } from './grid';
-import { GRID_EXAMPLES } from './examples';
+import { GRID_EXAMPLES, type GridExample } from './examples';
 import { lucideIcon } from './icons';
 import './style.css';
 
@@ -15,6 +15,10 @@ const swapDimensionsButton = byId<HTMLButtonElement>('swap-dimensions-button');
 const dimensionConfirmDialog = byId<HTMLDialogElement>('dimension-confirm-dialog');
 const cancelDimensionsButton = byId<HTMLButtonElement>('cancel-dimensions-button');
 const confirmDimensionsButton = byId<HTMLButtonElement>('confirm-dimensions-button');
+const exampleConfirmDialog = byId<HTMLDialogElement>('example-confirm-dialog');
+const exampleConfirmTitle = byId<HTMLElement>('example-confirm-title');
+const cancelExampleButton = byId<HTMLButtonElement>('cancel-example-button');
+const confirmExampleButton = byId<HTMLButtonElement>('confirm-example-button');
 const interpretationSelect = byId<HTMLSelectElement>('interpretation-select');
 const canvas = byId<HTMLCanvasElement>('grid-canvas');
 const canvasWrap = byId('canvas-wrap');
@@ -58,6 +62,7 @@ let messageTimer = 0;
 let clearConfirmationTimer = 0;
 let clearArmed = false;
 let pendingDimensions: { width: number; height: number } | null = null;
+let pendingExampleId: string | null = null;
 const clearButton = byId<HTMLButtonElement>('clear-grid-button');
 
 function populateIcons(): void {
@@ -157,11 +162,16 @@ function populateSelects(): void {
 function loadExample(exampleId: string): void {
   const example = GRID_EXAMPLES.find(({ id }) => id === exampleId);
   if (!example) return;
-  if (hasActiveCells() && !window.confirm('Loading this example will replace your current design. Continue?')) {
-    exampleSelect.value = '';
+  if (hasActiveCells()) {
+    pendingExampleId = exampleId;
+    exampleConfirmTitle.textContent = `Load “${example.name}”?`;
+    exampleConfirmDialog.showModal();
     return;
   }
+  applyExample(example);
+}
 
+function applyExample(example: GridExample): void {
   beginAction();
   grid = { ...example.grid, cells: example.grid.cells.slice() };
   activeCells = grid.cells.reduce((total, cell) => total + cell, 0);
@@ -177,6 +187,21 @@ function loadExample(exampleId: string): void {
   commitAction();
   showMessage(`${example.name} loaded.`, 'success');
   exampleSelect.value = '';
+}
+
+function cancelExampleChange(): void {
+  pendingExampleId = null;
+  if (exampleConfirmDialog.open) exampleConfirmDialog.close();
+  exampleSelect.value = '';
+}
+
+function confirmExampleChange(): void {
+  if (!pendingExampleId) return;
+  const example = GRID_EXAMPLES.find(({ id }) => id === pendingExampleId);
+  pendingExampleId = null;
+  exampleConfirmDialog.close();
+  if (example) applyExample(example);
+  else exampleSelect.value = '';
 }
 
 function updateDimensionOptions(): void {
@@ -610,6 +635,15 @@ dimensionConfirmDialog.addEventListener('cancel', () => {
 });
 dimensionConfirmDialog.addEventListener('click', (event) => {
   if (event.target === dimensionConfirmDialog) cancelDimensionChange();
+});
+cancelExampleButton.addEventListener('click', cancelExampleChange);
+confirmExampleButton.addEventListener('click', confirmExampleChange);
+exampleConfirmDialog.addEventListener('cancel', () => {
+  pendingExampleId = null;
+  exampleSelect.value = '';
+});
+exampleConfirmDialog.addEventListener('click', (event) => {
+  if (event.target === exampleConfirmDialog) cancelExampleChange();
 });
 interpretationSelect.addEventListener('change', () => {
   interpretation = interpretationSelect.value as Interpretation;
