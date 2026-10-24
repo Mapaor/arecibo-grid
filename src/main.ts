@@ -44,6 +44,7 @@ let selectionAnchor: { x: number; y: number } | null = null;
 let selectionHead: { x: number; y: number } | null = null;
 let activeCells = 0;
 let renderedFrame = 0;
+let messageTimer = 0;
 let clearConfirmationTimer = 0;
 let clearArmed = false;
 const clearButton = byId<HTMLButtonElement>('clear-grid-button');
@@ -53,8 +54,13 @@ function hasActiveCells(): boolean {
 }
 
 function showMessage(text: string, kind: 'success' | 'error' | 'info' = 'info'): void {
+  window.clearTimeout(messageTimer);
   message.textContent = text;
   message.className = `message is-visible ${kind}`;
+  messageTimer = window.setTimeout(() => {
+    message.className = 'message';
+    message.textContent = '';
+  }, kind === 'error' ? 7000 : 4000);
 }
 
 function populateSelects(): void {
