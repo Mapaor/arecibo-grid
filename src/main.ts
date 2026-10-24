@@ -100,7 +100,6 @@ function restoreSnapshot(snapshot: GridSnapshot): void {
   widthSelect.value = String(grid.width);
   heightSelect.value = String(grid.height);
   updateDimensionOptions();
-  updateSummary();
   selectionAnchor = null;
   selectionHead = null;
   activeCell = { x: 0, y: 0 };
@@ -172,7 +171,6 @@ function loadExample(exampleId: string): void {
   widthSelect.value = String(grid.width);
   heightSelect.value = String(grid.height);
   updateDimensionOptions();
-  updateSummary();
   createRaster();
   updateStatus();
   fitToWidth();
@@ -211,7 +209,6 @@ function handleDimensionChange(changed: 'width' | 'height'): void {
   }
 
   updateDimensionOptions();
-  updateSummary();
   applyDimensions(width, height);
 }
 
@@ -222,7 +219,6 @@ function swapDimensions(): void {
   widthSelect.value = String(grid.width);
   heightSelect.value = String(grid.height);
   updateDimensionOptions();
-  updateSummary();
   activeCell.x = Math.min(activeCell.x, grid.width - 1);
   activeCell.y = Math.min(activeCell.y, grid.height - 1);
   if (selectionAnchor && selectionHead) {
@@ -236,12 +232,6 @@ function swapDimensions(): void {
   fitToWidth();
   commitAction();
   showMessage('Grid dimensions swapped; binary data unchanged.', 'success');
-}
-
-function updateSummary(): void {
-  const width = Number(widthSelect.value);
-  const height = Number(heightSelect.value);
-  byId('total-count').textContent = (width * height).toLocaleString();
 }
 
 function visualToDataCell(x: number, y: number): { x: number; y: number } {
@@ -268,9 +258,9 @@ function updateEditingAvailability(): void {
 }
 
 function updateStatus(): void {
+  const totalCells = grid.width * grid.height;
   activeCount.textContent = activeCells.toLocaleString();
-  byId('total-count').textContent = (grid.width * grid.height).toLocaleString();
-  status.textContent = `${grid.width} × ${grid.height} grid`;
+  status.textContent = `${grid.width} × ${grid.height} grid (${totalCells.toLocaleString()} cells)`;
 }
 
 function createRaster(): void {
@@ -512,7 +502,6 @@ function cancelDimensionChange(): void {
   widthSelect.value = String(grid.width);
   heightSelect.value = String(grid.height);
   updateDimensionOptions();
-  updateSummary();
 }
 
 function confirmDimensionChange(): void {
@@ -575,7 +564,6 @@ function importTextFile(file: File): void {
       widthSelect.value = String(grid.width);
       heightSelect.value = String(grid.height);
       updateDimensionOptions();
-      updateSummary();
       activeCell = { x: 0, y: 0 };
       createRaster();
       updateStatus();
@@ -601,7 +589,6 @@ exampleSelect.addEventListener('change', () => loadExample(exampleSelect.value))
 widthSelect.value = '23';
 heightSelect.value = '23';
 updateDimensionOptions();
-updateSummary();
 updateEditingAvailability();
 createRaster();
 updateStatus();
@@ -620,7 +607,6 @@ dimensionConfirmDialog.addEventListener('cancel', () => {
   widthSelect.value = String(grid.width);
   heightSelect.value = String(grid.height);
   updateDimensionOptions();
-  updateSummary();
 });
 dimensionConfirmDialog.addEventListener('click', (event) => {
   if (event.target === dimensionConfirmDialog) cancelDimensionChange();
