@@ -96,7 +96,7 @@ function restoreSnapshot(snapshot: GridSnapshot): void {
   activeCell = { x: 0, y: 0 };
   createRaster();
   updateStatus();
-  fitToWidth();
+  scheduleRender();
 }
 
 function undo(): void {
@@ -249,6 +249,12 @@ function visualToDataCell(x: number, y: number): { x: number; y: number } {
 
 function dataToVisualCell(x: number, y: number): { x: number; y: number } {
   return visualToDataCell(x, y);
+}
+
+function updateEditingAvailability(): void {
+  const editable = interpretation === 'default';
+  canvas.classList.toggle('is-read-only', !editable);
+  canvas.setAttribute('aria-readonly', String(!editable));
 }
 
 function updateStatus(): void {
@@ -586,6 +592,7 @@ widthSelect.value = '23';
 heightSelect.value = '23';
 updateDimensionOptions();
 updateSummary();
+updateEditingAvailability();
 createRaster();
 updateStatus();
 
@@ -610,6 +617,7 @@ dimensionConfirmDialog.addEventListener('click', (event) => {
 });
 interpretationSelect.addEventListener('change', () => {
   interpretation = interpretationSelect.value as Interpretation;
+  updateEditingAvailability();
   createRaster();
   scheduleRender();
 });
@@ -656,6 +664,10 @@ fileInput.addEventListener('change', () => {
 
 canvas.addEventListener('pointerdown', (event) => {
   canvas.focus({ preventScroll: true });
+  if (interpretation !== 'default') {
+    event.preventDefault();
+    return;
+  }
   if (event.button === 1 || spaceDown) {
     panPointer = event.pointerId;
     panStart = { x: event.clientX, y: event.clientY, offsetX, offsetY };
@@ -710,6 +722,10 @@ canvas.addEventListener('wheel', (event) => {
 }, { passive: false });
 
 canvas.addEventListener('keydown', (event) => {
+  if (interpretation !== 'default' && (event.code === 'Space' || event.key.startsWith('Arrow'))) {
+    event.preventDefault();
+    return;
+  }
   const moves: Record<string, [number, number]> = {
     ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
   };

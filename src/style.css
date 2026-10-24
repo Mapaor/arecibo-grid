@@ -85,6 +85,8 @@ h1 span { color: #858d88; }
 .fullscreen-button { font-size: 16px; }
 #grid-canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; outline: none; }
 #grid-canvas.is-panning { cursor: grabbing; }
+#grid-canvas.is-read-only { cursor: default; }
+#grid-canvas.is-read-only.is-panning { cursor: grabbing; }
 .canvas-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #dcdad4; border-radius: 20px; background: #faf9f6eF; color: #747b77; font-size: 10px; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 8px #1821210a; }
 .hint-cursor { color: var(--orange); font-size: 14px; font-weight: 600; }
 .hint-separator { color: #b0b2ad; }
