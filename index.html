@@ -111,6 +111,15 @@
             <button class="button button-primary" id="confirm-example-button" type="button">Load example</button>
           </div>
         </dialog>
+        <dialog id="import-confirm-dialog" class="confirm-dialog" aria-labelledby="import-confirm-title" aria-describedby="import-confirm-description">
+          <div class="dialog-mark" data-icon="triangle-alert"></div>
+          <h2 id="import-confirm-title">Replace current design?</h2>
+          <p id="import-confirm-description">Importing this message will replace your current design. This cannot be undone.</p>
+          <div class="dialog-actions">
+            <button class="button button-quiet" id="cancel-import-button" type="button">Keep my grid</button>
+            <button class="button button-primary" id="confirm-import-button" type="button">Import message</button>
+          </div>
+        </dialog>
       </main>
 
     </div>

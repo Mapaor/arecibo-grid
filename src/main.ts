@@ -17,6 +17,9 @@ const cancelDimensionsButton = byId<HTMLButtonElement>('cancel-dimensions-button
 const confirmDimensionsButton = byId<HTMLButtonElement>('confirm-dimensions-button');
 const exampleConfirmDialog = byId<HTMLDialogElement>('example-confirm-dialog');
 const exampleConfirmTitle = byId<HTMLElement>('example-confirm-title');
+const importConfirmDialog = byId<HTMLDialogElement>('import-confirm-dialog');
+const cancelImportButton = byId<HTMLButtonElement>('cancel-import-button');
+const confirmImportButton = byId<HTMLButtonElement>('confirm-import-button');
 const cancelExampleButton = byId<HTMLButtonElement>('cancel-example-button');
 const confirmExampleButton = byId<HTMLButtonElement>('confirm-example-button');
 const interpretationSelect = byId<HTMLSelectElement>('interpretation-select');
@@ -36,11 +39,13 @@ if (!context) throw new Error('Canvas 2D is not available in this browser.');
 
 type Interpretation = 'default' | 'right-to-left' | 'bottom-to-top' | 'rotate-180';
 type GridSnapshot = { width: number; height: number; cells: Uint8Array };
+type GridClipboard = { width: number; height: number; cells: Uint8Array };
 
 let grid: Grid = createGrid(23, 23);
 let undoStack: GridSnapshot[] = [];
 let redoStack: GridSnapshot[] = [];
 let actionSnapshot: GridSnapshot | null = null;
+let gridClipboard: GridClipboard | null = null;
 let interpretation: Interpretation = 'default';
 let raster = document.createElement('canvas');
 let scale = 1;
@@ -50,6 +55,7 @@ let viewportWidth = 0;
 let viewportHeight = 0;
 let drawingPointer: number | null = null;
 let drawingValue = 1;
+let selectionPointer: number | null = null;
 let panPointer: number | null = null;
 let panStart = { x: 0, y: 0, offsetX: 0, offsetY: 0 };
 let spaceDown = false;
@@ -63,6 +69,7 @@ let clearConfirmationTimer = 0;
 let clearArmed = false;
 let pendingDimensions: { width: number; height: number } | null = null;
 let pendingExampleId: string | null = null;
+let pendingImport: Grid | null = null;
 const clearButton = byId<HTMLButtonElement>('clear-grid-button');
 
 function populateIcons(): void {
@@ -416,6 +423,41 @@ function updateCell(x: number, y: number, value: number): void {
   scheduleRender();
 }
 
+function copySelection(): void {
+  const left = selectionAnchor && selectionHead ? Math.min(selectionAnchor.x, selectionHead.x) : activeCell.x;
+  const right = selectionAnchor && selectionHead ? Math.max(selectionAnchor.x, selectionHead.x) : activeCell.x;
+  const top = selectionAnchor && selectionHead ? Math.min(selectionAnchor.y, selectionHead.y) : activeCell.y;
+  const bottom = selectionAnchor && selectionHead ? Math.max(selectionAnchor.y, selectionHead.y) : activeCell.y;
+  const width = right - left + 1;
+  const height = bottom - top + 1;
+  const cells = new Uint8Array(width * height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      cells[y * width + x] = grid.cells[(top + y) * grid.width + left + x];
+    }
+  }
+  gridClipboard = { width, height, cells };
+}
+
+function pasteSelection(): void {
+  if (!gridClipboard || interpretation !== 'default') return;
+  const width = Math.min(gridClipboard.width, grid.width - activeCell.x);
+  const height = Math.min(gridClipboard.height, grid.height - activeCell.y);
+  if (width <= 0 || height <= 0) return;
+
+  beginAction();
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      updateCell(activeCell.x + x, activeCell.y + y, gridClipboard.cells[y * gridClipboard.width + x]);
+    }
+  }
+  commitAction();
+
+  selectionAnchor = { ...activeCell };
+  selectionHead = { x: activeCell.x + width - 1, y: activeCell.y + height - 1 };
+  scheduleRender();
+}
+
 function visualCellAt(clientX: number, clientY: number): { x: number; y: number } | null {
   const bounds = canvas.getBoundingClientRect();
   const x = Math.floor((clientX - bounds.left - offsetX) / scale);
@@ -580,27 +622,48 @@ function importTextFile(file: File): void {
   reader.addEventListener('load', () => {
     try {
       const imported = parseGridText(String(reader.result ?? ''));
-      if (hasActiveCells() && !window.confirm('Importing this file will replace your current design. Continue?')) return;
-      beginAction();
-      grid = imported;
-      selectionAnchor = null;
-      selectionHead = null;
-      activeCells = grid.cells.reduce((total, cell) => total + cell, 0);
-      widthSelect.value = String(grid.width);
-      heightSelect.value = String(grid.height);
-      updateDimensionOptions();
-      activeCell = { x: 0, y: 0 };
-      createRaster();
-      updateStatus();
-      fitToWidth();
-      commitAction();
-      showMessage('Text design imported successfully.', 'success');
+      if (hasActiveCells()) {
+        pendingImport = imported;
+        importConfirmDialog.showModal();
+        return;
+      }
+      applyImportedGrid(imported);
     } catch (error) {
       showMessage(error instanceof Error ? error.message : 'Could not read this design file.', 'error');
     }
   });
   reader.addEventListener('error', () => showMessage('Could not read the selected file.', 'error'));
   reader.readAsText(file);
+}
+
+function applyImportedGrid(imported: Grid): void {
+  beginAction();
+  grid = imported;
+  selectionAnchor = null;
+  selectionHead = null;
+  activeCells = grid.cells.reduce((total, cell) => total + cell, 0);
+  widthSelect.value = String(grid.width);
+  heightSelect.value = String(grid.height);
+  updateDimensionOptions();
+  activeCell = { x: 0, y: 0 };
+  createRaster();
+  updateStatus();
+  fitToWidth();
+  commitAction();
+  showMessage('Text design imported successfully.', 'success');
+}
+
+function cancelImportChange(): void {
+  pendingImport = null;
+  if (importConfirmDialog.open) importConfirmDialog.close();
+}
+
+function confirmImportChange(): void {
+  if (!pendingImport) return;
+  const imported = pendingImport;
+  pendingImport = null;
+  importConfirmDialog.close();
+  applyImportedGrid(imported);
 }
 
 populateSelects();
@@ -644,6 +707,14 @@ exampleConfirmDialog.addEventListener('cancel', () => {
 });
 exampleConfirmDialog.addEventListener('click', (event) => {
   if (event.target === exampleConfirmDialog) cancelExampleChange();
+});
+cancelImportButton.addEventListener('click', cancelImportChange);
+confirmImportButton.addEventListener('click', confirmImportChange);
+importConfirmDialog.addEventListener('cancel', () => {
+  pendingImport = null;
+});
+importConfirmDialog.addEventListener('click', (event) => {
+  if (event.target === importConfirmDialog) cancelImportChange();
 });
 interpretationSelect.addEventListener('change', () => {
   interpretation = interpretationSelect.value as Interpretation;
@@ -710,6 +781,17 @@ canvas.addEventListener('pointerdown', (event) => {
   const cell = cellAt(event.clientX, event.clientY);
   if (!cell) return;
   activeCell = cell;
+  if (event.shiftKey) {
+    selectionAnchor = { ...cell };
+    selectionHead = { ...cell };
+    selectionPointer = event.pointerId;
+    canvas.setPointerCapture(event.pointerId);
+    scheduleRender();
+    event.preventDefault();
+    return;
+  }
+  selectionAnchor = null;
+  selectionHead = null;
   beginAction();
   drawingPointer = event.pointerId;
   drawingValue = grid.cells[cell.y * grid.width + cell.x] ? 0 : 1;
@@ -725,6 +807,15 @@ canvas.addEventListener('pointermove', (event) => {
     scheduleRender();
     return;
   }
+  if (selectionPointer === event.pointerId) {
+    const cell = cellAt(event.clientX, event.clientY);
+    if (cell) {
+      activeCell = cell;
+      selectionHead = { ...cell };
+      scheduleRender();
+    }
+    return;
+  }
   if (drawingPointer !== event.pointerId) return;
   const cell = cellAt(event.clientX, event.clientY);
   if (!cell) return;
@@ -732,7 +823,18 @@ canvas.addEventListener('pointermove', (event) => {
   updateCell(cell.x, cell.y, drawingValue);
 });
 
-function endPointer(event: PointerEvent): void {
+function endPointer(event: PointerEvent, updateSelectionHead = false): void {
+  if (selectionPointer === event.pointerId) {
+    if (updateSelectionHead) {
+      const cell = cellAt(event.clientX, event.clientY);
+      if (cell) {
+        activeCell = cell;
+        selectionHead = { ...cell };
+      }
+    }
+    selectionPointer = null;
+    scheduleRender();
+  }
   if (drawingPointer === event.pointerId) {
     drawingPointer = null;
     commitAction();
@@ -742,9 +844,9 @@ function endPointer(event: PointerEvent): void {
     canvas.classList.remove('is-panning');
   }
 }
-canvas.addEventListener('pointerup', endPointer);
-canvas.addEventListener('pointercancel', endPointer);
-canvas.addEventListener('lostpointercapture', endPointer);
+canvas.addEventListener('pointerup', (event) => endPointer(event, true));
+canvas.addEventListener('pointercancel', (event) => endPointer(event));
+canvas.addEventListener('lostpointercapture', (event) => endPointer(event));
 
 canvas.addEventListener('wheel', (event) => {
   event.preventDefault();
@@ -801,12 +903,22 @@ window.addEventListener('keyup', (event) => { if (event.code === 'Space') spaceD
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 
 editor.addEventListener('keydown', (event) => {
-  if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
+  if (!(event.ctrlKey || event.metaKey)) return;
   const target = event.target;
   if (target instanceof HTMLElement && target.closest('input, select, textarea, button, [contenteditable="true"]')) return;
-  event.preventDefault();
-  if (event.shiftKey) redo();
-  else undo();
+
+  const key = event.key.toLowerCase();
+  if (key === 'z') {
+    event.preventDefault();
+    if (event.shiftKey) redo();
+    else undo();
+  } else if (key === 'c') {
+    event.preventDefault();
+    copySelection();
+  } else if (key === 'v') {
+    event.preventDefault();
+    pasteSelection();
+  }
 });
 
 const resizeObserver = new ResizeObserver(() => {

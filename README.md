@@ -24,6 +24,9 @@ The export is a plain text file, the first line contains `width height` and the 
 ### SVG
 You can export it as an SVG image as well.
 
+## Selection and copy/paste
+Use `Shift` + drag or `Shift` + arrow keys to select a rectangular area. Press `Space` to toggle the selected cells. Use `Ctrl+C` to copy the selection and `Ctrl+V` to paste it at the active cell; pasted cells that would extend past the grid edge are clipped. The copied area is kept in the editor until another area is copied or the page is reloaded.
+
 ## Undo and redo
 The editor stores grid snapshots for undo and redo. There is no limit but each snapshot represents space in the browser storage. Use the toolbar buttons, `Ctrl+Z` to undo, and `Ctrl+Shift+Z` to redo.
 
