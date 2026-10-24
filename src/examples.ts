@@ -98,7 +98,7 @@ export interface GridExample {
 export const GRID_EXAMPLES: GridExample[] = [
   {
     id: 'arecibo-official',
-    name: 'Arecibo message (official)',
+    name: 'Original Arecibo Message',
     grid: gridFromRows(officialAreciboRows),
   },
 ];

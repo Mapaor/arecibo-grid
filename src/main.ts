@@ -10,7 +10,9 @@ const byId = <T extends HTMLElement>(id: string): T => {
 
 const widthSelect = byId<HTMLSelectElement>('width-select');
 const heightSelect = byId<HTMLSelectElement>('height-select');
+const swapDimensionsButton = byId<HTMLButtonElement>('swap-dimensions-button');
 const summary = byId('dimension-summary');
+const interpretationSelect = byId<HTMLSelectElement>('interpretation-select');
 const canvas = byId<HTMLCanvasElement>('grid-canvas');
 const canvasWrap = byId('canvas-wrap');
 const zoomLabel = byId('zoom-label');
@@ -22,7 +24,10 @@ const exampleSelect = byId<HTMLSelectElement>('example-select');
 const context = canvas.getContext('2d');
 if (!context) throw new Error('Canvas 2D is not available in this browser.');
 
+type Interpretation = 'default' | 'right-to-left' | 'bottom-to-top' | 'rotate-180';
+
 let grid: Grid = createGrid(23, 23);
+let interpretation: Interpretation = 'default';
 let raster = document.createElement('canvas');
 let scale = 1;
 let offsetX = 0;
@@ -124,10 +129,48 @@ function handleDimensionChange(changed: 'width' | 'height'): void {
   applyDimensions(width, height);
 }
 
+function swapDimensions(): void {
+  const previousWidth = grid.width;
+  grid = { ...grid, width: grid.height, height: previousWidth };
+  widthSelect.value = String(grid.width);
+  heightSelect.value = String(grid.height);
+  updateDimensionOptions();
+  updateSummary();
+  activeCell.x = Math.min(activeCell.x, grid.width - 1);
+  activeCell.y = Math.min(activeCell.y, grid.height - 1);
+  if (selectionAnchor && selectionHead) {
+    selectionAnchor.x = Math.min(selectionAnchor.x, grid.width - 1);
+    selectionAnchor.y = Math.min(selectionAnchor.y, grid.height - 1);
+    selectionHead.x = Math.min(selectionHead.x, grid.width - 1);
+    selectionHead.y = Math.min(selectionHead.y, grid.height - 1);
+  }
+  createRaster();
+  updateStatus();
+  fitToWidth();
+  showMessage('Grid dimensions swapped; binary data unchanged.', 'success');
+}
+
 function updateSummary(): void {
   const width = Number(widthSelect.value);
   const height = Number(heightSelect.value);
   summary.textContent = `${(width * height).toLocaleString()} cells`;
+}
+
+function visualToDataCell(x: number, y: number): { x: number; y: number } {
+  switch (interpretation) {
+    case 'right-to-left':
+      return { x: grid.width - 1 - x, y };
+    case 'bottom-to-top':
+      return { x, y: grid.height - 1 - y };
+    case 'rotate-180':
+      return { x: grid.width - 1 - x, y: grid.height - 1 - y };
+    default:
+      return { x, y };
+  }
+}
+
+function dataToVisualCell(x: number, y: number): { x: number; y: number } {
+  return visualToDataCell(x, y);
 }
 
 function updateStatus(): void {
@@ -143,13 +186,17 @@ function createRaster(): void {
   if (!rasterContext) return;
 
   const image = rasterContext.createImageData(grid.width, grid.height);
-  for (let index = 0; index < grid.cells.length; index += 1) {
-    const pixel = index * 4;
-    const color = grid.cells[index] ? 20 : 255;
-    image.data[pixel] = color;
-    image.data[pixel + 1] = color;
-    image.data[pixel + 2] = color;
-    image.data[pixel + 3] = 255;
+  for (let y = 0; y < grid.height; y += 1) {
+    for (let x = 0; x < grid.width; x += 1) {
+      const { x: dataX, y: dataY } = visualToDataCell(x, y);
+      const index = dataY * grid.width + dataX;
+      const pixel = (y * grid.width + x) * 4;
+      const color = grid.cells[index] ? 20 : 255;
+      image.data[pixel] = color;
+      image.data[pixel + 1] = color;
+      image.data[pixel + 2] = color;
+      image.data[pixel + 3] = 255;
+    }
   }
   rasterContext.putImageData(image, 0, 0);
 }
@@ -194,10 +241,12 @@ function render(): void {
 
   if (scale >= 7) drawGridLines();
   if (selectionAnchor && selectionHead) {
-    const left = Math.min(selectionAnchor.x, selectionHead.x);
-    const top = Math.min(selectionAnchor.y, selectionHead.y);
-    const right = Math.max(selectionAnchor.x, selectionHead.x);
-    const bottom = Math.max(selectionAnchor.y, selectionHead.y);
+    const visualAnchor = dataToVisualCell(selectionAnchor.x, selectionAnchor.y);
+    const visualHead = dataToVisualCell(selectionHead.x, selectionHead.y);
+    const left = Math.min(visualAnchor.x, visualHead.x);
+    const top = Math.min(visualAnchor.y, visualHead.y);
+    const right = Math.max(visualAnchor.x, visualHead.x);
+    const bottom = Math.max(visualAnchor.y, visualHead.y);
     context!.fillStyle = 'rgba(200, 117, 72, 0.18)';
     context!.fillRect(offsetX + left * scale, offsetY + top * scale, (right - left + 1) * scale, (bottom - top + 1) * scale);
     context!.strokeStyle = '#c87548';
@@ -205,9 +254,10 @@ function render(): void {
     context!.strokeRect(offsetX + left * scale + 1, offsetY + top * scale + 1, Math.max(0, (right - left + 1) * scale - 2), Math.max(0, (bottom - top + 1) * scale - 2));
   }
   if (activeCell.x >= 0 && activeCell.x < grid.width && activeCell.y >= 0 && activeCell.y < grid.height) {
+    const activeVisual = dataToVisualCell(activeCell.x, activeCell.y);
     context!.strokeStyle = '#d1814b';
     context!.lineWidth = Math.max(1, 1.5 / dpr);
-    context!.strokeRect(offsetX + activeCell.x * scale + 1, offsetY + activeCell.y * scale + 1, Math.max(0, scale - 2), Math.max(0, scale - 2));
+    context!.strokeRect(offsetX + activeVisual.x * scale + 1, offsetY + activeVisual.y * scale + 1, Math.max(0, scale - 2), Math.max(0, scale - 2));
   }
   zoomLabel.textContent = `${Math.round((scale / initialFitScale()) * 100)}%`;
 }
@@ -241,20 +291,22 @@ function drawGridLines(): void {
 
 function updateCell(x: number, y: number, value: number): void {
   if (x < 0 || x >= grid.width || y < 0 || y >= grid.height) return;
-  const index = y * grid.width + x;
+  const { x: dataX, y: dataY } = visualToDataCell(x, y);
+  const index = dataY * grid.width + dataX;
   if (grid.cells[index] === value) return;
   grid.cells[index] = value;
   activeCells += value ? 1 : -1;
   const rasterContext = raster.getContext('2d');
   if (rasterContext) {
+    const visual = dataToVisualCell(dataX, dataY);
     rasterContext.fillStyle = value ? '#141414' : '#ffffff';
-    rasterContext.fillRect(x, y, 1, 1);
+    rasterContext.fillRect(visual.x, visual.y, 1, 1);
   }
   updateStatus();
   scheduleRender();
 }
 
-function cellAt(clientX: number, clientY: number): { x: number; y: number } | null {
+function visualCellAt(clientX: number, clientY: number): { x: number; y: number } | null {
   const bounds = canvas.getBoundingClientRect();
   const x = Math.floor((clientX - bounds.left - offsetX) / scale);
   const y = Math.floor((clientY - bounds.top - offsetY) / scale);
@@ -262,9 +314,15 @@ function cellAt(clientX: number, clientY: number): { x: number; y: number } | nu
   return { x, y };
 }
 
+function cellAt(clientX: number, clientY: number): { x: number; y: number } | null {
+  const visualCell = visualCellAt(clientX, clientY);
+  return visualCell ? visualToDataCell(visualCell.x, visualCell.y) : null;
+}
+
 function ensureActiveCellVisible(): void {
-  const cellLeft = offsetX + activeCell.x * scale;
-  const cellTop = offsetY + activeCell.y * scale;
+  const activeVisual = dataToVisualCell(activeCell.x, activeCell.y);
+  const cellLeft = offsetX + activeVisual.x * scale;
+  const cellTop = offsetY + activeVisual.y * scale;
   const cellRight = cellLeft + scale;
   const cellBottom = cellTop + scale;
   if (cellLeft < 0) offsetX -= cellLeft;
@@ -429,6 +487,12 @@ updateStatus();
 
 widthSelect.addEventListener('change', () => handleDimensionChange('width'));
 heightSelect.addEventListener('change', () => handleDimensionChange('height'));
+swapDimensionsButton.addEventListener('click', swapDimensions);
+interpretationSelect.addEventListener('change', () => {
+  interpretation = interpretationSelect.value as Interpretation;
+  createRaster();
+  scheduleRender();
+});
 
 function zoomAtCenter(factor: number): void {
   const bounds = canvas.getBoundingClientRect();

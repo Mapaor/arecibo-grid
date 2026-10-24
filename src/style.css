@@ -15,6 +15,7 @@
 }
 
 * { box-sizing: border-box; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 body { margin: 0; min-width: 320px; background: #f5f4f0; }
 button, select { font: inherit; }
 button { color: inherit; }
@@ -49,11 +50,16 @@ h1 span { color: #858d88; }
 .editor-toolbar { min-height: 65px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 0 19px; border-bottom: 1px solid #e5e4df; }
 .dimensions, .view-controls { display: flex; align-items: center; }
 .dimensions { gap: 9px; }
+.interpretation-field { display: flex; align-items: center; gap: 7px; margin-left: 4px; padding-left: 12px; border-left: 1px solid #e3e2dd; }
+.interpretation-field label { color: #737c78; font-size: 11px; }
+.interpretation-field select { height: 31px; max-width: 140px; padding: 0 23px 0 9px; border: 1px solid #deded8; border-radius: 4px; background: #fff; color: var(--ink); font: 11px 'DM Sans', sans-serif; }
+.interpretation-field select:focus-visible { outline: 2px solid #c87548; outline-offset: 2px; }
 .dimension-field { display: flex; align-items: center; gap: 7px; }
 .dimension-field label { color: #737c78; font-size: 11px; }
 .dimension-field select { appearance: none; min-width: 65px; height: 31px; padding: 0 24px 0 10px; border: 1px solid #deded8; border-radius: 4px; background-color: #fff; color: var(--ink); font-family: 'DM Mono', monospace; font-size: 12px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23737c78' stroke-width='1.3'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
 .dimension-field select:focus-visible, button:focus-visible, a:focus-visible, canvas:focus-visible { outline: 2px solid #c87548; outline-offset: 2px; }
 .dimension-times { margin: 0 2px; color: #9a9e99; font-size: 14px; }
+.swap-dimensions-button { height: 31px; padding: 0 9px; white-space: nowrap; }
 .dimension-summary { margin-left: 7px; padding-left: 13px; border-left: 1px solid #e3e2dd; color: #8a918d; font-family: 'DM Mono', monospace; font-size: 10px; }
 .view-controls { gap: 6px; }
 .zoom-label { min-width: 40px; margin-right: 3px; color: #7f8783; font-family: 'DM Mono', monospace; font-size: 10px; text-align: right; }
