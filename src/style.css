@@ -27,6 +27,10 @@ button { color: inherit; }
 .brand-mark i { background: var(--orange); border-radius: 1px; }
 .brand-mark i:nth-child(2), .brand-mark i:nth-child(3) { opacity: .42; }
 .topbar-actions { display: flex; align-items: center; gap: 9px; }
+.history-controls { display: flex; align-items: center; gap: 5px; margin-left: 5px; padding-left: 10px; border-left: 1px solid #e3e2dd; }
+.history-button { flex: 0 0 29px; width: 29px; height: 29px; color: #59635f; font-size: 19px; }
+.history-button:disabled { opacity: .38; cursor: default; }
+.history-button:disabled:hover { background: #fff; }
 .button { height: 38px; border: 1px solid transparent; border-radius: 5px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .16s, border-color .16s, transform .16s; }
 .button:active, .icon-button:active { transform: translateY(1px); }
 .button-quiet { border-color: var(--line); background: transparent; }
@@ -57,7 +61,8 @@ h1 span { color: #858d88; }
 .interpretation-field select:hover { border-color: #b8bcb5; }
 .dimension-field { display: flex; align-items: center; gap: 7px; }
 .dimension-field label { color: #737c78; font-size: 11px; }
-.dimension-field select { appearance: none; min-width: 65px; height: 31px; padding: 0 24px 0 10px; border: 1px solid #d7d8d2; border-radius: 4px; background-color: #fff; color: var(--ink); font-family: 'DM Mono', monospace; font-size: 12px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23737c78' stroke-width='1.3'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.dimension-field select { appearance: none; min-width: 65px; height: 31px; padding: 0 24px 0 10px; border: 1px solid #c9ccc5; border-radius: 4px; background-color: #fff; color: var(--ink); font-family: 'DM Mono', monospace; font-size: 12px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23737c78' stroke-width='1.3'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; cursor: pointer; transition: border-color .15s, box-shadow .15s; box-shadow: 0 1px 2px #1b28200a; }
+.dimension-field select:hover { border-color: #aeb4ab; background-color: #fffefa; }
 .dimension-field select:hover { border-color: #b8bcb5; }
 .dimension-field select:focus-visible, button:focus-visible, a:focus-visible, canvas:focus-visible { outline: 2px solid #c87548; outline-offset: 2px; }
 .dimension-times { margin: 0 2px; color: #9a9e99; font-size: 14px; }
@@ -93,6 +98,15 @@ h1 span { color: #858d88; }
 .message.success { color: #416e52; background: #eef5ef; }
 .message.error { color: #a23d34; background: #fbefed; }
 .message.info { color: #59635f; background: #f2f2ee; }
+.confirm-dialog { width: min(420px, calc(100vw - 36px)); padding: 28px; border: 1px solid #deded8; border-radius: 9px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 80px #17211d33; }
+.confirm-dialog::backdrop { background: #17211dcc; backdrop-filter: blur(3px); }
+.dialog-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #faeee8; color: #a6533b; font-family: 'DM Mono', monospace; font-size: 15px; }
+.confirm-dialog h2 { margin: 17px 0 8px; font-family: 'Space Grotesk', sans-serif; font-size: 21px; font-weight: 600; letter-spacing: -.5px; }
+.confirm-dialog p { margin: 0; color: #747d79; font-size: 13px; line-height: 1.65; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 25px; }
+.dialog-actions .button { height: 36px; }
+.dialog-actions .button-primary { background: #a6533b; }
+.dialog-actions .button-primary:hover { background: #8f432f; }
 .below-grid { max-width: 990px; margin: 16px auto 0; display: flex; align-items: center; justify-content: space-between; gap: 15px; color: #878d88; font-size: 10px; }
 .below-grid p { display: flex; align-items: center; gap: 8px; margin: 0; }
 .info-symbol { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #a5aaa4; border-radius: 50%; font-family: Georgia, serif; font-size: 9px; font-style: italic; }

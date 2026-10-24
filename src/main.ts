@@ -11,7 +11,9 @@ const byId = <T extends HTMLElement>(id: string): T => {
 const widthSelect = byId<HTMLSelectElement>('width-select');
 const heightSelect = byId<HTMLSelectElement>('height-select');
 const swapDimensionsButton = byId<HTMLButtonElement>('swap-dimensions-button');
-const summary = byId('dimension-summary');
+const dimensionConfirmDialog = byId<HTMLDialogElement>('dimension-confirm-dialog');
+const cancelDimensionsButton = byId<HTMLButtonElement>('cancel-dimensions-button');
+const confirmDimensionsButton = byId<HTMLButtonElement>('confirm-dimensions-button');
 const interpretationSelect = byId<HTMLSelectElement>('interpretation-select');
 const canvas = byId<HTMLCanvasElement>('grid-canvas');
 const canvasWrap = byId('canvas-wrap');
@@ -21,12 +23,19 @@ const activeCount = byId('active-count');
 const message = byId('message');
 const fileInput = byId<HTMLInputElement>('file-input');
 const exampleSelect = byId<HTMLSelectElement>('example-select');
+const undoButton = byId<HTMLButtonElement>('undo-button');
+const redoButton = byId<HTMLButtonElement>('redo-button');
+const editor = byId<HTMLElement>('app');
 const context = canvas.getContext('2d');
 if (!context) throw new Error('Canvas 2D is not available in this browser.');
 
 type Interpretation = 'default' | 'right-to-left' | 'bottom-to-top' | 'rotate-180';
+type GridSnapshot = { width: number; height: number; cells: Uint8Array };
 
 let grid: Grid = createGrid(23, 23);
+let undoStack: GridSnapshot[] = [];
+let redoStack: GridSnapshot[] = [];
+let actionSnapshot: GridSnapshot | null = null;
 let interpretation: Interpretation = 'default';
 let raster = document.createElement('canvas');
 let scale = 1;
@@ -47,7 +56,66 @@ let renderedFrame = 0;
 let messageTimer = 0;
 let clearConfirmationTimer = 0;
 let clearArmed = false;
+let pendingDimensions: { width: number; height: number } | null = null;
 const clearButton = byId<HTMLButtonElement>('clear-grid-button');
+
+function snapshotGrid(): GridSnapshot {
+  return { width: grid.width, height: grid.height, cells: grid.cells.slice() };
+}
+
+function updateHistoryButtons(): void {
+  undoButton.disabled = undoStack.length === 0;
+  redoButton.disabled = redoStack.length === 0;
+}
+
+function beginAction(): void {
+  if (actionSnapshot) return;
+  actionSnapshot = snapshotGrid();
+}
+
+function commitAction(): void {
+  if (!actionSnapshot) return;
+  const before = actionSnapshot;
+  actionSnapshot = null;
+  const unchanged = before.width === grid.width && before.height === grid.height && before.cells.every((cell, index) => cell === grid.cells[index]);
+  if (unchanged) return;
+  undoStack.push(before);
+  redoStack = [];
+  updateHistoryButtons();
+}
+
+function restoreSnapshot(snapshot: GridSnapshot): void {
+  grid = { width: snapshot.width, height: snapshot.height, cells: snapshot.cells.slice() };
+  activeCells = grid.cells.reduce((total, cell) => total + cell, 0);
+  widthSelect.value = String(grid.width);
+  heightSelect.value = String(grid.height);
+  updateDimensionOptions();
+  updateSummary();
+  selectionAnchor = null;
+  selectionHead = null;
+  activeCell = { x: 0, y: 0 };
+  createRaster();
+  updateStatus();
+  fitToWidth();
+}
+
+function undo(): void {
+  const previous = undoStack.pop();
+  if (!previous) return;
+  redoStack.push(snapshotGrid());
+  restoreSnapshot(previous);
+  updateHistoryButtons();
+  showMessage('Last change undone.', 'info');
+}
+
+function redo(): void {
+  const next = redoStack.pop();
+  if (!next) return;
+  undoStack.push(snapshotGrid());
+  restoreSnapshot(next);
+  updateHistoryButtons();
+  showMessage('Change redone.', 'info');
+}
 
 function hasActiveCells(): boolean {
   return activeCells > 0;
@@ -85,6 +153,7 @@ function loadExample(exampleId: string): void {
     return;
   }
 
+  beginAction();
   grid = { ...example.grid, cells: example.grid.cells.slice() };
   activeCells = grid.cells.reduce((total, cell) => total + cell, 0);
   activeCell = { x: 0, y: 0 };
@@ -97,6 +166,7 @@ function loadExample(exampleId: string): void {
   createRaster();
   updateStatus();
   fitToWidth();
+  commitAction();
   showMessage(`${example.name} loaded.`, 'success');
   exampleSelect.value = '';
 }
@@ -136,6 +206,7 @@ function handleDimensionChange(changed: 'width' | 'height'): void {
 }
 
 function swapDimensions(): void {
+  beginAction();
   const previousWidth = grid.width;
   grid = { ...grid, width: grid.height, height: previousWidth };
   widthSelect.value = String(grid.width);
@@ -153,13 +224,14 @@ function swapDimensions(): void {
   createRaster();
   updateStatus();
   fitToWidth();
+  commitAction();
   showMessage('Grid dimensions swapped; binary data unchanged.', 'success');
 }
 
 function updateSummary(): void {
   const width = Number(widthSelect.value);
   const height = Number(heightSelect.value);
-  summary.textContent = `${(width * height).toLocaleString()} cells`;
+  byId('total-count').textContent = (width * height).toLocaleString();
 }
 
 function visualToDataCell(x: number, y: number): { x: number; y: number } {
@@ -181,6 +253,7 @@ function dataToVisualCell(x: number, y: number): { x: number; y: number } {
 
 function updateStatus(): void {
   activeCount.textContent = activeCells.toLocaleString();
+  byId('total-count').textContent = (grid.width * grid.height).toLocaleString();
   status.textContent = `${grid.width} × ${grid.height} grid`;
 }
 
@@ -371,6 +444,7 @@ function clearGrid(): void {
     return;
   }
 
+  beginAction();
   window.clearTimeout(clearConfirmationTimer);
   clearArmed = false;
   clearButton.textContent = 'Clear grid';
@@ -387,19 +461,22 @@ function clearGrid(): void {
   }
   updateStatus();
   scheduleRender();
+  commitAction();
   showMessage('Grid cleared.', 'success');
 }
 
 function applyDimensions(width: number, height: number): void {
   if (width === grid.width && height === grid.height) return;
-  if (hasActiveCells() && !window.confirm('Changing the dimensions clears your current design. Continue?')) {
-    widthSelect.value = String(grid.width);
-    heightSelect.value = String(grid.height);
-    updateDimensionOptions();
-    updateSummary();
+  if (hasActiveCells()) {
+    pendingDimensions = { width, height };
+    dimensionConfirmDialog.showModal();
     return;
   }
+  createNewGrid(width, height);
+}
 
+function createNewGrid(width: number, height: number): void {
+  beginAction();
   grid = createGrid(width, height);
   selectionAnchor = null;
   selectionHead = null;
@@ -408,7 +485,26 @@ function applyDimensions(width: number, height: number): void {
   createRaster();
   updateStatus();
   fitToWidth();
+  commitAction();
   showMessage('New blank grid created.', 'success');
+}
+
+function cancelDimensionChange(): void {
+  actionSnapshot = null;
+  pendingDimensions = null;
+  if (dimensionConfirmDialog.open) dimensionConfirmDialog.close();
+  widthSelect.value = String(grid.width);
+  heightSelect.value = String(grid.height);
+  updateDimensionOptions();
+  updateSummary();
+}
+
+function confirmDimensionChange(): void {
+  if (!pendingDimensions) return;
+  const { width, height } = pendingDimensions;
+  pendingDimensions = null;
+  dimensionConfirmDialog.close();
+  createNewGrid(width, height);
 }
 
 function download(blob: Blob, filename: string): void {
@@ -455,6 +551,7 @@ function importTextFile(file: File): void {
     try {
       const imported = parseGridText(String(reader.result ?? ''));
       if (hasActiveCells() && !window.confirm('Importing this file will replace your current design. Continue?')) return;
+      beginAction();
       grid = imported;
       selectionAnchor = null;
       selectionHead = null;
@@ -467,6 +564,7 @@ function importTextFile(file: File): void {
       createRaster();
       updateStatus();
       fitToWidth();
+      commitAction();
       showMessage('Text design imported successfully.', 'success');
     } catch (error) {
       showMessage(error instanceof Error ? error.message : 'Could not read this design file.', 'error');
@@ -491,9 +589,25 @@ updateSummary();
 createRaster();
 updateStatus();
 
+updateHistoryButtons();
+undoButton.addEventListener('click', undo);
+redoButton.addEventListener('click', redo);
 widthSelect.addEventListener('change', () => handleDimensionChange('width'));
 heightSelect.addEventListener('change', () => handleDimensionChange('height'));
 swapDimensionsButton.addEventListener('click', swapDimensions);
+cancelDimensionsButton.addEventListener('click', cancelDimensionChange);
+confirmDimensionsButton.addEventListener('click', confirmDimensionChange);
+dimensionConfirmDialog.addEventListener('cancel', () => {
+  actionSnapshot = null;
+  pendingDimensions = null;
+  widthSelect.value = String(grid.width);
+  heightSelect.value = String(grid.height);
+  updateDimensionOptions();
+  updateSummary();
+});
+dimensionConfirmDialog.addEventListener('click', (event) => {
+  if (event.target === dimensionConfirmDialog) cancelDimensionChange();
+});
 interpretationSelect.addEventListener('change', () => {
   interpretation = interpretationSelect.value as Interpretation;
   createRaster();
@@ -554,6 +668,7 @@ canvas.addEventListener('pointerdown', (event) => {
   const cell = cellAt(event.clientX, event.clientY);
   if (!cell) return;
   activeCell = cell;
+  beginAction();
   drawingPointer = event.pointerId;
   drawingValue = grid.cells[cell.y * grid.width + cell.x] ? 0 : 1;
   updateCell(cell.x, cell.y, drawingValue);
@@ -576,7 +691,10 @@ canvas.addEventListener('pointermove', (event) => {
 });
 
 function endPointer(event: PointerEvent): void {
-  if (drawingPointer === event.pointerId) drawingPointer = null;
+  if (drawingPointer === event.pointerId) {
+    drawingPointer = null;
+    commitAction();
+  }
   if (panPointer === event.pointerId) {
     panPointer = null;
     canvas.classList.remove('is-panning');
@@ -619,6 +737,7 @@ canvas.addEventListener('keydown', (event) => {
     scheduleRender();
   } else if (event.code === 'Space') {
     event.preventDefault();
+    beginAction();
     const left = selectionAnchor && selectionHead ? Math.min(selectionAnchor.x, selectionHead.x) : activeCell.x;
     const right = selectionAnchor && selectionHead ? Math.max(selectionAnchor.x, selectionHead.x) : activeCell.x;
     const top = selectionAnchor && selectionHead ? Math.min(selectionAnchor.y, selectionHead.y) : activeCell.y;
@@ -627,12 +746,22 @@ canvas.addEventListener('keydown', (event) => {
     for (let y = top; y <= bottom; y += 1) {
       for (let x = left; x <= right; x += 1) updateCell(x, y, targetValue);
     }
+    commitAction();
   }
 });
 
 window.addEventListener('keydown', (event) => { if (event.code === 'Space' && event.target === canvas) spaceDown = true; });
 window.addEventListener('keyup', (event) => { if (event.code === 'Space') spaceDown = false; });
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+
+editor.addEventListener('keydown', (event) => {
+  if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
+  const target = event.target;
+  if (target instanceof HTMLElement && target.closest('input, select, textarea, button, [contenteditable="true"]')) return;
+  event.preventDefault();
+  if (event.shiftKey) redo();
+  else undo();
+});
 
 const resizeObserver = new ResizeObserver(() => {
   const bounds = canvasWrap.getBoundingClientRect();

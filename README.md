@@ -24,7 +24,8 @@ The export is a plain text file, the first line contains `width height` and the 
 ### SVG
 You can export it as an SVG image as well.
 
-
+## Undo and redo
+The editor stores grid snapshots for undo and redo. There is no limit but each snapshot represents space in the browser storage. Use the toolbar buttons, `Ctrl+Z` to undo, and `Ctrl+Shift+Z` to redo.
 
 ## Development
 This website works with Vite and Typescript.

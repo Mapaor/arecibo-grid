@@ -15,6 +15,7 @@
           <span>arecibo<span class="brand-light">grid</span></span>
         </a>
         <div class="topbar-actions">
+
           <button class="button button-quiet" id="import-button" type="button"><span class="button-icon" aria-hidden="true">↥</span> Import text</button>
           <button class="button button-quiet" id="export-text-button" type="button"><span class="button-icon" aria-hidden="true">↧</span> Export text</button>
           <button class="button button-primary" id="export-image-button" type="button"><span class="button-icon" aria-hidden="true">▧</span> Export image</button>
@@ -50,15 +51,18 @@
                 <select id="height-select" aria-label="Grid height" title="Dimmed primes remain selectable; out-of-range choices adjust the other dimension."></select>
               </div>
               <button class="button button-fit swap-dimensions-button" id="swap-dimensions-button" type="button" title="Transpose the grid and swap its dimensions" aria-label="Swap dimensions">Swap</button>
-              <span class="dimension-summary" id="dimension-summary"></span>
+
               <div class="interpretation-field">
-                <label for="interpretation-select">Interpretation</label>
-                <select id="interpretation-select" aria-label="Grid interpretation">
-                  <option value="default">Default</option>
+                <select id="interpretation-select" aria-label="Interpretation">
+                  <option value="default">Default interpretation</option>
                   <option value="right-to-left">Right to left</option>
                   <option value="bottom-to-top">Bottom to top</option>
                   <option value="rotate-180">Rotate 180°</option>
                 </select>
+              </div>
+              <div class="history-controls" aria-label="Edit history">
+                <button class="icon-button history-button" id="undo-button" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled>↶</button>
+                <button class="icon-button history-button" id="redo-button" type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled>↷</button>
               </div>
             </div>
             <div class="view-controls" aria-label="Canvas view controls">
@@ -80,7 +84,7 @@
 
           <div class="editor-footer">
             <div class="grid-status"><span class="status-indicator"></span><span id="grid-status">Ready to create</span></div>
-            <div class="cell-count"><span id="active-count">0</span> <span class="muted">active cells</span></div>
+            <div class="cell-count"><span id="active-count">0</span>/<span id="total-count">529</span> <span class="muted">active cells</span></div>
           </div>
           <p class="message" id="message" role="status" aria-live="polite"></p>
         </section>
@@ -89,6 +93,15 @@
           <p><span class="info-symbol">i</span> Click or drag to paint <span class="hint-separator">·</span> Ctrl + / Ctrl Shift + to zoom <span class="hint-separator">·</span> Shift + arrows to select cells <span class="hint-separator">·</span> Space to toggle.</p>
           <a href="https://github.com/Mapaor/arecibo-grid" target="_blank" rel="noopener noreferrer">View on GitHub <span aria-hidden="true">↗</span></a>
         </section>
+        <dialog id="dimension-confirm-dialog" class="confirm-dialog" aria-labelledby="dimension-confirm-title" aria-describedby="dimension-confirm-description">
+          <div class="dialog-mark" aria-hidden="true">!</div>
+          <h2 id="dimension-confirm-title">Start a new grid?</h2>
+          <p id="dimension-confirm-description">Changing the dimensions will clear the current design. This cannot be undone.</p>
+          <div class="dialog-actions">
+            <button class="button button-quiet" id="cancel-dimensions-button" type="button">Keep my grid</button>
+            <button class="button button-primary" id="confirm-dimensions-button" type="button">Clear and resize</button>
+          </div>
+        </dialog>
       </main>
 
     </div>
