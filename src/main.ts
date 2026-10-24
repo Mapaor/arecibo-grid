@@ -149,7 +149,7 @@ function showMessage(text: string, kind: 'success' | 'error' | 'info' = 'info'):
   messageTimer = window.setTimeout(() => {
     message.className = 'message';
     message.textContent = '';
-  }, kind === 'error' ? 6000 : 3000);
+  }, kind === 'error' ? 6000 : 3000); // Status message lasting time
 }
 
 function populateSelects(): void {
